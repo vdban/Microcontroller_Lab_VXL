@@ -127,7 +127,6 @@ int main(void)
 	  HAL_Delay(2000);
  8000170:	f44f 60fa 	mov.w	r0, #2000	; 0x7d0
  8000174:	f000 f968 	bl	8000448 <HAL_Delay>
-	  // Đổi trạng thái 2 LED
 	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
  8000178:	2120      	movs	r1, #32
  800017a:	4804      	ldr	r0, [pc, #16]	; (800018c <main+0x40>)

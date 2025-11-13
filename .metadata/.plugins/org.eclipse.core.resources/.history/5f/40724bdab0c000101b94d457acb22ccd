@@ -1,0 +1,19 @@
+/*
+ * task.c
+ *
+ *  Created on: Nov 11, 2025
+ *      Author: Gia Minh
+ */
+
+#ifndef INC_TASK_H_
+#define INC_TASK_H_
+
+#include "main.h"
+
+void Task1_ToggleLed(void);
+void Task2_ToggleLed(void);
+void Task3_ToggleLed(void);
+void Task4_ToggleLed(void);
+void Task5_ToggleLed(void);
+
+#endif /* INC_TASK_H_ */

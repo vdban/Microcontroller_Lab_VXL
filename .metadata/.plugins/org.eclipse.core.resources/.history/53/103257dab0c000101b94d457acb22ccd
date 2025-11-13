@@ -1,0 +1,110 @@
+/*
+ * task.c
+ *
+ *  Created on: Nov 11, 2025
+ *      Author: Gia Minh
+ */
+
+#include "main.h"
+#include "task.h"
+#include "scheduler.h"
+
+// Mảng chứa các tác vụ
+static sTask SCH_tasks_G[SCH_MAX_TASKS];
+static uint32_t current_task_id = 0;
+
+void SCH_Init(void) {
+	current_task_id = 0;
+	// Khởi tạo mảng tác vụ
+	for (uint32_t i = 0; i < SCH_MAX_TASKS; i++) {
+		// Xóa tác vụ (đặt pTask = NULL)
+		SCH_Delete_Task(i);
+	}
+}
+
+uint32_t SCH_Add_Task(void (*pFunction)(), uint32_t DELAY, uint32_t PERIOD) {
+	uint32_t index = 0;
+
+	// Tìm một vị trí trống trong mảng
+	while (index < SCH_MAX_TASKS && SCH_tasks_G[index].pTask != NULL) {
+		index++;
+	}
+
+	// Nếu không tìm thấy vị trí trống (mảng đầy)
+	if (index == SCH_MAX_TASKS) {
+		// TODO: Xử lý lỗi
+		return SCH_MAX_TASKS;
+	}
+
+	// Gán thông tin cho tác vụ mới
+	SCH_tasks_G[index].pTask = pFunction;
+	SCH_tasks_G[index].Delay = DELAY;
+	SCH_tasks_G[index].Period = PERIOD;
+	SCH_tasks_G[index].RunMe = 0;
+	SCH_tasks_G[index].TaskID = current_task_id++; // Gán ID duy nhất
+
+	return SCH_tasks_G[index].TaskID; // Trả về ID của tác vụ
+}
+
+uint8_t SCH_Delete_Task(uint32_t taskID) {
+	uint8_t return_code = 0; // Giả sử thất bại
+	uint32_t index = 0;
+
+	// Tìm tác vụ dựa trên TaskID
+	while (index < SCH_MAX_TASKS && SCH_tasks_G[index].TaskID != taskID) {
+		index++;
+	}
+
+	// Nếu tìm thấy tác vụ
+	if (index < SCH_MAX_TASKS) {
+		SCH_tasks_G[index].pTask = NULL;
+		SCH_tasks_G[index].Delay = 0;
+		SCH_tasks_G[index].Period = 0;
+		SCH_tasks_G[index].RunMe = 0;
+		SCH_tasks_G[index].TaskID = 0; // Đặt lại ID
+		return_code = 1; // Báo thành công
+	}
+
+	return return_code;
+}
+
+void SCH_Update(void) {
+	// Duyệt qua tất cả các tác vụ
+	for (uint32_t i = 0; i < SCH_MAX_TASKS; i++) {
+		// Kiểm tra xem có tác vụ tại vị trí này không
+		if (SCH_tasks_G[i].pTask != NULL) {
+			// Nếu Delay = 0, tác vụ sẵn sàng để chạy
+			if (SCH_tasks_G[i].Delay == 0) {
+				// Tăng cờ RunMe
+				SCH_tasks_G[i].RunMe += 1;
+
+				// Nếu là tác vụ định kỳ, nạp lại Delay
+				if (SCH_tasks_G[i].Period > 0) {
+					SCH_tasks_G[i].Delay = SCH_tasks_G[i].Period;
+				}
+			} else {
+				// Nếu Delay > 0, giảm Delay đi 1
+				SCH_tasks_G[i].Delay -= 1;
+			}
+		}
+	}
+}
+
+void SCH_Dispatch_Tasks(void) {
+	// Duyệt qua tất cả các tác vụ
+	for (uint32_t i = 0; i < SCH_MAX_TASKS; i++) {
+		// Nếu tác vụ sẵn sàng để chạy (RunMe > 0)
+		if (SCH_tasks_G[i].RunMe > 0) {
+			// Chạy tác vụ
+			(*SCH_tasks_G[i].pTask)();
+
+			// Giảm cờ RunMe
+			SCH_tasks_G[i].RunMe -= 1;
+
+			// Nếu là tác vụ one-shot (Period = 0), xóa nó
+			if (SCH_tasks_G[i].Period == 0) {
+				SCH_Delete_Task(SCH_tasks_G[i].TaskID);
+			}
+		}
+	}
+}

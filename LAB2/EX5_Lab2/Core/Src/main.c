@@ -58,7 +58,6 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 const int MAX_LED = 4;
 int index_led = 0;
-int hour = 15, minute = 8, second = 50;
 int led_buffer[4] = {1, 5, 0, 8};
 int pinControll7SEG[4] = {EN0_Pin, EN1_Pin, EN2_Pin, EN3_Pin};
 
@@ -66,103 +65,32 @@ int led_scan_counter = 0;
 int dot_counter = 0;
 int dot_status = 0;
 
-/* --- SOFTWARE TIMER --- */
+int hour = 15, minute = 8, second = 50;
 int timer0_counter = 0;
 int timer0_flag = 0;
 int timer1_counter = 0;
 int timer1_flag = 0;
 int TIMER_CYCLE = 10;
 
-void setTimer0(int duration) {
-    timer0_counter = duration / TIMER_CYCLE;
-    timer0_flag = 0;
+void setTimer0(int duration){
+	  timer0_counter = duration /TIMER_CYCLE;
+	  timer0_flag = 0;
 }
 
-void setTimer1(int duration) {
-    timer1_counter = duration / TIMER_CYCLE;
-    timer1_flag = 0;
+void setTimer1(int duration){
+	timer1_counter = duration / TIMER_CYCLE;
+	timer1_flag = 0;
 }
 
-void timer_run() {
-    if (timer0_counter > 0) {
-        timer0_counter--;
-        if (timer0_counter == 0) timer0_flag = 1;
-    }
-    if (timer1_counter > 0) {
-    	timer1_counter--;
-    	if (timer1_counter == 0) timer1_flag = 1;
-    }
-}
-
-void display7SEG(int num) {
-    static const uint8_t seven_seg_code[10] = {
-        0b1000000, //0
-        0b1111001, //1
-        0b0100100, //2
-        0b0110000, //3
-        0b0011001, //4
-        0b0010010, //5
-        0b0000010, //6
-        0b1111000, //7
-        0b0000000, //8
-        0b0010000  //9
-    };
-
-    uint8_t code = seven_seg_code[num];
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, (code & 0b1000000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // a
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, (code & 0b0100000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // b
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, (code & 0b0010000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // c
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, (code & 0b0001000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // d
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, (code & 0b0000100) ? GPIO_PIN_SET : GPIO_PIN_RESET); // e
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, (code & 0b0000010) ? GPIO_PIN_SET : GPIO_PIN_RESET); // f
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, (code & 0b0000001) ? GPIO_PIN_SET : GPIO_PIN_RESET); // g
-}
-
-void clearLed() {
-    HAL_GPIO_WritePin(GPIOA, EN0_Pin | EN1_Pin | EN2_Pin | EN3_Pin, SET);
-}
-
-void clearEnable () {
-	HAL_GPIO_WritePin ( EN0_GPIO_Port , EN0_Pin , 1);
-	HAL_GPIO_WritePin ( EN1_GPIO_Port , EN1_Pin , 1);
-	HAL_GPIO_WritePin ( EN2_GPIO_Port , EN2_Pin , 1);
-	HAL_GPIO_WritePin ( EN3_GPIO_Port , EN3_Pin , 1);
-}
-
-void enablePin(int index) {
-    HAL_GPIO_WritePin(GPIOA, pinControll7SEG[index], RESET);
-}
-
-void update7SEG(int index) {
-    clearLed();
-    clearEnable ();
-    switch (index) {
-    case 0:
-        display7SEG(led_buffer[0]);
-        enablePin(0);
-        break;
-    case 1:
-        display7SEG(led_buffer[1]);
-        enablePin(1);
-        break;
-    case 2:
-        display7SEG(led_buffer[2]);
-        enablePin(2);
-        break;
-    case 3:
-        display7SEG(led_buffer[3]);
-        enablePin(3);
-        break;
-    default:
-        break;
-    }
-}
-
-void updateClockBuffer() {
-    led_buffer[0] = hour / 10;
-    led_buffer[1] = hour % 10;
-    led_buffer[2] = minute / 10;
-    led_buffer[3] = minute % 10;
+void timer_run(){
+	if (timer0_counter > 0) {
+		timer0_counter--;
+		if (timer0_counter == 0) timer0_flag = 1;
+	}
+	if (timer1_counter >0) {
+		timer1_counter--;
+		if (timer1_counter == 0) timer1_flag = 1;
+	}
 }
 /* USER CODE END 0 */
 
@@ -173,7 +101,12 @@ void updateClockBuffer() {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	void updateClockBuffer () {
+		  led_buffer[0] = hour / 10;
+		  led_buffer[1] = hour % 10;
+		  led_buffer[2] = minute / 10;
+		  led_buffer[3] = minute % 10;
+	  }
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -196,37 +129,42 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  updateClockBuffer();
+  updateClockBuffet();
   HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  void timer_run() {
+	  if (timer0_counter > 0){
+		  timer0_counter--;
+		  if (timer0_counter == 0) timer0_flag = 1;
+	  }
+  }
+
   setTimer0(1000);
-  setTimer1(1000);
-  int dot_status = 0;
   while (1)
   {
     /* USER CODE END WHILE */
-	/* USER CODE BEGIN 3 */
-	if (timer0_flag == 1) {
-	second++;
-	if (second >= 60) { second = 0; minute++;}
-	if (minute >= 60) { minute = 0; hour++;}
-	if (hour >= 24) { hour = 0;}
+	  if (timer0_flag == 1)
+	  {
+		  second++;
+		  if (second > 60) {
+			  second = 0;
+			  minute++;
+		  }
+		  if (minute > 60) {
+			  minute = 0;
+			  hour++;
+		  }
+		  if (hour > 24) {
+			  hour = 0;
+		  }
 
-	updateClockBuffer();
-	setTimer0(1000);
-	}
-	if (timer1_flag == 1) {
-		dot_status = !dot_status;
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, dot_status ? GPIO_PIN_RESET : GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, dot_status ? GPIO_PIN_RESET : GPIO_PIN_SET);
-		setTimer1(1000);
-	}
-
-  /* USER CODE END 3 */
-}
+		  updateClockBuffer();
+		  setTimer0(1000);
+	  }
+  }
 
 /**
   * @brief System Clock Configuration
@@ -350,18 +288,92 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void clearLed() {
+    HAL_GPIO_WritePin(GPIOA, EN0_Pin | EN1_Pin | EN2_Pin | EN3_Pin, SET);
+}
+
+void clearEnable () {
+	HAL_GPIO_WritePin ( EN0_GPIO_Port , EN0_Pin , 1);
+	HAL_GPIO_WritePin ( EN1_GPIO_Port , EN1_Pin , 1);
+	HAL_GPIO_WritePin ( EN2_GPIO_Port , EN2_Pin , 1);
+	HAL_GPIO_WritePin ( EN3_GPIO_Port , EN3_Pin , 1);
+}
+
+void display7SEG(int num) {
+    static const uint8_t seven_seg_code[10] = {
+        0b1000000, //0
+        0b1111001, //1
+        0b0100100, //2
+        0b0110000, //3
+        0b0011001, //4
+        0b0010010, //5
+        0b0000010, //6
+        0b1111000, //7
+        0b0000000, //8
+        0b0010000  //9
+    };
+
+    uint8_t code = seven_seg_code[num];
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, (code & 0b1000000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // a
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, (code & 0b0100000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // b
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, (code & 0b0010000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // c
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, (code & 0b0001000) ? GPIO_PIN_SET : GPIO_PIN_RESET); // d
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, (code & 0b0000100) ? GPIO_PIN_SET : GPIO_PIN_RESET); // e
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, (code & 0b0000010) ? GPIO_PIN_SET : GPIO_PIN_RESET); // f
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, (code & 0b0000001) ? GPIO_PIN_SET : GPIO_PIN_RESET); // g
+}
+
+void enablePin(int index) {
+    HAL_GPIO_WritePin(GPIOA, pinControll7SEG[index], RESET);
+}
+
+void update7SEG(int index) {
+    clearLed();
+    clearEnable ();
+    switch (index) {
+    case 0:
+        display7SEG(led_buffer[0]);
+        enablePin(0);
+        break;
+    case 1:
+        display7SEG(led_buffer[1]);
+        enablePin(1);
+        break;
+    case 2:
+        display7SEG(led_buffer[2]);
+        enablePin(2);
+        break;
+    case 3:
+        display7SEG(led_buffer[3]);
+        enablePin(3);
+        break;
+    default:
+        break;
+    }
+}
+
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM2) {
-		        timer_run();
+	        timer_run();
 
-		        led_scan_counter++;
-		        if (led_scan_counter >= 50) {
-		            led_scan_counter = 0;
-		            update7SEG(index_led);
-		            index_led = (index_led + 1) % MAX_LED;
-		        }
-		    }
+	        led_scan_counter++;
+	        dot_counter++;
+
+	        if (dot_counter >= 100) {
+	            dot_counter = 0;
+	            dot_status = !dot_status;
+	            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, dot_status ? GPIO_PIN_RESET : GPIO_PIN_SET);
+	            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, dot_status ? GPIO_PIN_RESET : GPIO_PIN_SET);
+	        }
+
+	        if (led_scan_counter >= 50) {
+	            led_scan_counter = 0;
+	            update7SEG(index_led);
+	            index_led = (index_led + 1) % MAX_LED;
+	        }
+	    }
 }
 /* USER CODE END 4 */
 
@@ -398,3 +410,4 @@ void assert_failed(uint8_t *file, uint32_t line)
 #endif /* USE_FULL_ASSERT */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

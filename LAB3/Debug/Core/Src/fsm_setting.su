@@ -1,0 +1,2 @@
+fsm_setting.c:20:6:blinkyLed	16	static
+fsm_setting.c:60:6:fsm_setting	8	static

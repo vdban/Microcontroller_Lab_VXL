@@ -1,0 +1,5 @@
+task.c:11:6:Task1_ToggleLed	8	static
+task.c:16:6:Task2_ToggleLed	8	static
+task.c:21:6:Task3_ToggleLed	8	static
+task.c:26:6:Task4_ToggleLed	8	static
+task.c:31:6:Task5_ToggleLed	8	static

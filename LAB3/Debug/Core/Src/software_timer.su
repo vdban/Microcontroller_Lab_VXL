@@ -1,0 +1,7 @@
+software_timer.c:24:6:setTimer1	16	static
+software_timer.c:29:6:setTimer2	16	static
+software_timer.c:34:6:setTimer3	16	static
+software_timer.c:39:6:timer1Run	4	static
+software_timer.c:48:6:timer2Run	4	static
+software_timer.c:57:6:timer3Run	4	static
+software_timer.c:66:6:timerRun	8	static

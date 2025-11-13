@@ -1,0 +1,4 @@
+display_7seg.c:19:6:displaySegment	8	static
+display_7seg.c:73:6:setEnableSignal	16	static
+display_7seg.c:109:6:displayNumber	16	static
+display_7seg.c:212:6:updateBufferWithMode	16	static

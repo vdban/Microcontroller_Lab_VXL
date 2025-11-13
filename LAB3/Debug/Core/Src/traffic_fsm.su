@@ -1,0 +1,6 @@
+traffic_fsm.c:8:6:setTraffic1	24	static
+traffic_fsm.c:14:6:setTraffic2	24	static
+traffic_fsm.c:20:6:fsm_traffic_auto	8	static
+traffic_fsm.c:48:6:fsm_modify_red	8	static
+traffic_fsm.c:55:6:fsm_modify_yellow	8	static
+traffic_fsm.c:62:6:fsm_modify_green	8	static
