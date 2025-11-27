@@ -1,0 +1,79 @@
+/*
+ * fsm.c
+ *
+ *  Created on: Nov 27, 2025
+ *      Author: ACER
+ */
+#include "fsm.h"
+#include "software_timer.h"
+#include <stdio.h>
+#include <string.h>
+
+extern ADC_HandleTypeDef hadc1;
+extern UART_HandleTypeDef huart2;
+
+int status = 0;
+uint32_t time_start = 0;
+
+void command_parser_fsm() {
+	if (index_buffer > 0 && buffer[index_buffer - 1] == '#') {
+		buffer[index_buffer] = '\0';
+
+		if (strstr((char*)buffer, "!RST#") != NULL) {
+	      command_flag = 1;
+	      index_buffer = 0;
+	      memset(buffer, 0, MAX_BUFFER_SIZE);
+	    }
+
+		else if (strstr((char*)buffer, "!OK#") != NULL) {
+	      command_flag = 2;
+	      index_buffer = 0;
+	      memset(buffer, 0, MAX_BUFFER_SIZE);
+		}
+	}
+}
+
+void uart_communiation_fsm() {
+	char str_transmit[30];
+	switch (status) {
+	case 0: // IDLE: Chờ lệnh RST
+		if (command_flag == 1) { // Nếu nhận được RST
+			command_flag = 0; // Xóa cờ
+	        status = 1;       // Chuyển sang gửi ADC
+	      }
+		break;
+
+	case 1:
+		ADC_value = HAL_ADC_GetValue(&hadc1);
+
+	      // 2. Format chuỗi gửi đi: !ADC=1234#
+		sprintf(str_transmit, "!ADC=%ld#\r\n", ADC_value);
+
+	      // 3. Gửi qua UART
+		HAL_UART_Transmit(&huart2, (uint8_t*)str_transmit, strlen(str_transmit), 1000);
+
+	      // 4. Kích hoạt timer timeout
+		time_start = HAL_GetTick(); // Lưu thời điểm bắt đầu gửi
+		status = 2; // Chuyển sang chờ OK
+		break;
+
+	    case 2: // WAIT_OK: Chờ xác nhận hoặc Timeout
+	      if (command_flag == 2) { // Nếu nhận được OK
+	        command_flag = 0;
+	        status = 0; // Xong quy trình, quay về IDLE
+	        HAL_GPIO_TogglePin(GPIOA, GPIO_PA5_Pin); // Nháy đèn báo thành công (tùy chọn)
+	      }
+	      else {
+	        // Kiểm tra Timeout 3 giây (3000ms)
+	        if (HAL_GetTick() - time_start >= 3000) {
+	          status = 1; // Quay lại trạng thái gửi (Gửi lại gói tin cũ)
+	        }
+	      }
+	      break;
+
+	    default:
+	      status = 0;
+	      break;
+	}
+}
+

@@ -1,0 +1,70 @@
+/*
+ * fsm.c
+ *
+ *  Created on: Nov 27, 2025
+ *      Author: ACER
+ */
+#include "fsm.h"
+#include <stdio.h>
+#include <string.h>
+
+extern ADC_HandleTypeDef hadc1;
+extern UART_HandleTypeDef huart2;
+
+int status = 0;
+uint32_t time_start = 0;
+
+void command_parser_fsm() {
+	if (index_buffer > 0 && buffer[index_buffer - 1] == '#') {
+		buffer[index_buffer] = '\0';
+
+		if (strstr((char*)buffer, "!RST#") != NULL) {
+	      command_flag = 1;
+	      index_buffer = 0;
+	      memset(buffer, 0, MAX_BUFFER_SIZE);
+	    }
+
+		else if (strstr((char*)buffer, "!OK#") != NULL) {
+	      command_flag = 2;
+	      index_buffer = 0;
+	      memset(buffer, 0, MAX_BUFFER_SIZE);
+		}
+	}
+}
+
+void uart_communiation_fsm() {
+	char str_transmit[30];
+	switch (status) {
+	case 0:
+		if (command_flag == 1) {
+			command_flag = 0;
+	        status = 1;
+	        }
+		break;
+
+	case 1:
+		ADC_value = HAL_ADC_GetValue(&hadc1);
+		sprintf(str_transmit, "!ADC=%ld#\r\n", ADC_value);
+
+		HAL_UART_Transmit(&huart2, (uint8_t*)str_transmit, strlen(str_transmit), 1000);
+		time_start = HAL_GetTick();
+		status = 2;
+		break;
+
+	case 2:
+		if (command_flag == 2) {
+			command_flag = 0;
+	        status = 0;
+	        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		}
+		else if (HAL_GetTick() - time_start >= 3000) {
+	          status = 1;
+		}
+		break;
+
+	default:
+		status = 0;
+		break;
+	}
+}
+

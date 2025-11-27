@@ -1,4 +1,4 @@
-08:54:51 **** Build of configuration Debug for project EX5_Lab2 ****
+05:25:25 **** Incremental Build of configuration Debug for project EX5_Lab2 ****
 make -j20 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'main':
@@ -40,5 +40,5 @@ arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -D
 make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
 "make -j20 all" terminated with exit code 2. Build might be incomplete.
 
-08:54:52 Build Failed. 4 errors, 8 warnings. (took 791ms)
+05:25:25 Build Failed. 4 errors, 8 warnings. (took 159ms)
 

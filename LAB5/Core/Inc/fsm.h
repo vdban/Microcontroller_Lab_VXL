@@ -1,0 +1,15 @@
+/*
+ * fsm.h
+ *
+ *  Created on: Nov 27, 2025
+ *      Author: ACER
+ */
+
+#ifndef INC_FSM_H_
+#define INC_FSM_H_
+#include "global.h"
+
+void command_parser_fsm();
+void uart_communiation_fsm();
+
+#endif /* INC_FSM_H_ */
