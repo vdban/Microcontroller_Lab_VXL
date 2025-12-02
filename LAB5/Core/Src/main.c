@@ -70,10 +70,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	}
 }
 
-void HAL_SYSTICK_Callback(void) {
-	timerRun();
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-}
 /* USER CODE END 0 */
 
 /**

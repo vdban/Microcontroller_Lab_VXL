@@ -11,8 +11,16 @@
 extern ADC_HandleTypeDef hadc1;
 extern UART_HandleTypeDef huart2;
 
+// Biến trạng thái
 int status = 0;
-uint32_t time_start = 0;
+int status_parser = 0;
+
+// Biến lưu thời gian
+static uint32_t time_start = 0;
+static uint32_t led_time = 0;
+
+// Biến lưu giá trị ADC "đóng băng"
+static uint32_t ADC_held_value = 0;
 
 void command_parser_fsm() {
 	if (index_buffer > 0 && buffer[index_buffer - 1] == '#') {
@@ -34,37 +42,55 @@ void command_parser_fsm() {
 
 void uart_communiation_fsm() {
 	char str_transmit[30];
-	switch (status) {
-	case 0:
-		if (command_flag == 1) {
-			command_flag = 0;
-	        status = 1;
-	        }
-		break;
 
-	case 1:
-		ADC_value = HAL_ADC_GetValue(&hadc1);
-		sprintf(str_transmit, "!ADC=%ld#\r\n", ADC_value);
+		switch (status) {
+		case 0: // IDLE
+			// Nháy LED mỗi 500ms khi rảnh
+			if (HAL_GetTick() - led_time >= 500) {
+				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+				led_time = HAL_GetTick();
+			}
 
-		HAL_UART_Transmit(&huart2, (uint8_t*)str_transmit, strlen(str_transmit), 1000);
-		time_start = HAL_GetTick();
-		status = 2;
-		break;
+			if (command_flag == 1) { // Nhận RST
+				command_flag = 0;
+				status = 1;
+			}
+			break;
 
-	case 2:
-		if (command_flag == 2) {
-			command_flag = 0;
-	        status = 0;
-	        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		case 1: // SEND ACC
+			// 1. Đọc ADC 
+			HAL_ADC_Start(&hadc1);
+			HAL_ADC_PollForConversion(&hadc1, 10);
+			ADC_held_value = HAL_ADC_GetValue(&hadc1);
+			HAL_ADC_Stop(&hadc1);
+
+			// 2. Gửi giá trị vừa đọc
+			sprintf(str_transmit, "!ADC=%ld#\r\n", ADC_held_value);
+			HAL_UART_Transmit(&huart2, (uint8_t*)str_transmit, strlen(str_transmit), 1000); 
+
+			// 3. Đặt giờ timeout
+			time_start = HAL_GetTick();
+			status = 2;
+			break;
+
+		case 2: // WAIT OK
+			if (command_flag == 2) { // Nhận OK -> Về IDLE
+				command_flag = 0;
+				status = 0;
+			}
+			else if (HAL_GetTick() - time_start >= 3000) { 
+				// GỬI LẠI GIÁ TRỊ CŨ (ADC_held_value)
+				sprintf(str_transmit, "!ADC=%ld#\r\n", ADC_held_value);
+				HAL_UART_Transmit(&huart2, (uint8_t*)str_transmit, strlen(str_transmit), 1000);
+
+				// Reset đồng hồ 3s
+				time_start = HAL_GetTick();
+			}
+			break;
+
+		default:
+			status = 0;
+			break;
 		}
-		else if (HAL_GetTick() - time_start >= 3000) {
-	          status = 1;
-		}
-		break;
-
-	default:
-		status = 0;
-		break;
-	}
 }
 

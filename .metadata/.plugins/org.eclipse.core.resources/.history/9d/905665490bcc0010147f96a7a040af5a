@@ -1,0 +1,118 @@
+/*
+ * fsm.c
+ *
+ *  Created on: Nov 27, 2025
+ *      Author: ACER
+ */
+#include "fsm.h"
+#include <stdio.h>
+#include <string.h>
+
+extern ADC_HandleTypeDef hadc1;
+extern UART_HandleTypeDef huart2;
+static uint32_t OLD_VALUE;
+
+int status = 0;
+uint32_t time_start = 0;
+
+void command_parser_fsm() {
+	switch (status_parser) {
+		case 0: // Trạng thái chờ ký tự bắt đầu '!'
+			if (temp == '!')
+				status_parser = 1;
+			break;
+
+		case 1: // Đã có '!', chờ 'R' hoặc 'O'
+			if (temp == 'R')
+				status_parser = 2;
+			else if (temp == 'O')
+				status_parser = 5;
+			else if (temp == '!') // Lỡ tay gõ !! thì vẫn giữ trạng thái này
+				status_parser = 1;
+			else
+				status_parser = 0;
+			break;
+
+		// --- NHÁNH XỬ LÝ LỆNH RST ---
+		case 2: // Đã có "!R", chờ 'S'
+			if (temp == 'S') status_parser = 3;
+			else status_parser = 0;
+			break;
+
+		case 3: // Đã có "!RS", chờ 'T'
+			if (temp == 'T') status_parser = 4;
+			else status_parser = 0;
+			break;
+
+		case 4: // Đã có "!RST", chờ '#'
+			if (temp == '#') {
+				command_flag = 1; // Đặt cờ RST
+				status_parser = 0;
+			} else {
+				status_parser = 0;
+			}
+			break;
+
+		// --- NHÁNH XỬ LÝ LỆNH OK ---
+		case 5: // Đã có "!O", chờ 'K'
+			if (temp == 'K') status_parser = 6;
+			else status_parser = 0;
+			break;
+
+		case 6: // Đã có "!OK", chờ '#'
+			if (temp == '#') {
+				command_flag = 2; // Đặt cờ OK
+				status_parser = 0;
+			} else {
+				status_parser = 0;
+			}
+			break;
+
+		default:
+			status_parser = 0;
+			break;
+		}
+}
+
+void uart_communiation_fsm() {
+	char str_transmit[30];
+	static uint32_t led_time = 0;
+	switch (status) {
+	case 0:
+		if (HAL_GetTick() - led_time >= 500) {
+			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+			led_time = HAL_GetTick();
+			}
+
+		if (command_flag == 1) {
+			command_flag = 0;
+	        status = 1;
+	        }
+		break;
+
+	case 1:
+		ADC_value = HAL_ADC_GetValue(&hadc1);
+		sprintf(str_transmit, "!ADC=%ld#\r\n", ADC_value);
+		OLD_VALUE = ADC_value; //lưu giá trị cũ của ADC
+		HAL_UART_Transmit(&huart2, (uint8_t*)str_transmit, strlen(str_transmit), 1000);
+		time_start = HAL_GetTick();
+		status = 2;
+		break;
+
+	case 2:
+		if (command_flag == 2) {
+			command_flag = 0;
+	        status = 0;
+		}
+		else if (HAL_GetTick() - time_start >= 3000) {
+	          int len = sprintf(str_transmit, "!ADC=%ld#\r\n", OLD_VALUE);
+	          HAL_UART_Transmit(&huart2, (uint8_t*)str_transmit, len, 1000);
+		}
+		break;
+
+	default:
+		status = 0;
+		break;
+	}
+}
+
